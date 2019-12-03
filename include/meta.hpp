@@ -1,58 +1,16 @@
 #pragma once
 #include <type_traits>
-
-namespace COMPANY_NAME 
+namespace Slate 
 {
-	namespace Imp::Meta
+	namespace Meta
 	{
 		template <typename ... Types>
-		class _Types
+		class Wrap
 		{};
+	}
 
-		template <typename Start_Type, typename Cast_To_Type, typename ... Intermediate_Types>
-		class Cast
-		{
-		public:
-			using Cast_Type = Cast_To_Type&;
-			static Cast_Type _Cast(Start_Type& t)
-			{
-				return static_cast<Cast_To_Type&>(Cast<Start_Type, Intermediate_Types...>::_Cast(t));
-			}
-		};
-
-		template <typename Start_Type, typename Cast_To_Type>
-		class Cast<Start_Type, Cast_To_Type>
-		{
-		public:
-			using Cast_Type = Cast_To_Type&;
-			static Cast_Type _Cast(Start_Type& t)
-			{
-				return static_cast<Cast_To_Type&>(t);
-			}
-		};
-
-		template <typename Start_Type, typename Cast_To_Type, typename ... Intermediate_Types>
-		class Const_Cast
-		{
-		public:
-			using Cast_Type = const Cast_To_Type&;
-			static Cast_Type _Cast(Start_Type& t)
-			{
-				return static_cast<const Cast_To_Type&>(Cast<Start_Type, Intermediate_Types...>::_Cast(t));
-			}
-		};
-
-		template <typename Start_Type, typename Cast_To_Type>
-		class Const_Cast<Start_Type, Cast_To_Type>
-		{
-		public:
-			using Cast_Type = const Cast_To_Type&;
-			static Cast_Type _Cast(Start_Type& t)
-			{
-				return static_cast<const Cast_To_Type&>(t);
-			}
-		};
-
+	namespace Imp::Meta
+	{
 		template <typename, template <typename...> typename>
 		class Convert {};
 
@@ -71,7 +29,7 @@ namespace COMPANY_NAME
 		{};
 
 		template <typename ... Types>
-		class Is_Container<_Types<Types...>> : public std::true_type
+		class Is_Container<Slate::Meta::Wrap<Types...>> : public std::true_type
 		{};
 
 		// template <template <typename...> typename Container, typename ... Types>
@@ -88,16 +46,6 @@ namespace COMPANY_NAME
 
 		template <typename Type>
 		constexpr bool Is_Container_v = Is_Container<Type>::value;
-
-		template <typename ... Types1>
-		class Wrap
-		{
-		public:
-			using Type = _Types<Types1...>;
-		};
-
-		template <typename ... Types>
-		using Wrap_t = typename Wrap<Types...>::Type;
 
 		template <typename Type1>
 		class Unwrap
@@ -135,7 +83,7 @@ namespace COMPANY_NAME
 		class Join<Container1<Types1...>, Container2<Types2...>>
 		{
 		public:
-			using Type = Wrap_t<Types1..., Types2...>;
+			using Type = Slate::Meta::Wrap<Types1..., Types2...>;
 		};
 
 		//Joining One Containers
@@ -144,7 +92,7 @@ namespace COMPANY_NAME
 		class Join<Container1<Types1...>>
 		{
 		public:
-			using Type = Wrap_t<Types1...>;
+			using Type = Slate::Meta::Wrap<Types1...>;
 		};
 
 		//Joining Zero Containers
@@ -153,59 +101,11 @@ namespace COMPANY_NAME
 		class Join<>
 		{
 		public:
-			using Type = Wrap_t<>;
+			using Type = Slate::Meta::Wrap<>;
 		};
 
 		template <typename ... Types>
 		using Join_t = typename Join<Types...>::Type;
-
-		//Base Definition
-		template <typename...>
-		class Distribute
-		{};
-
-		//Distribute n > 2
-		template <typename Type1, typename ... Types_Rest>
-		class Distribute<Type1, Types_Rest...>
-		{
-		public:
-			using Type = typename Distribute<Type1, typename Distribute<Types_Rest...>::Type>::Type;
-		};
-
-		//Distribute n = 2
-		template <template <typename ...> typename Container1, template <typename ...> typename Container2, typename ... Types1, typename ... Types2>
-		class Distribute<Container1<Types1...>, Container2<Types2...>>
-		{
-		public:
-			using Type = Join_t<typename Distribute<Wrap_t<Types1>, Wrap_t<Types2...>>::Type...>;
-		};
-
-		//Distribute n = 2, sizeof(c1)... = 1
-		template <template <typename ...> typename Container1, template <typename ...> typename Container2, typename Type1, typename ... Types2>
-		class Distribute<Container1<Type1>, Container2<Types2...>>
-		{
-		public:
-			using Type = Join_t<Wrap_t<Join_t<Wrap_t<Type1>, std::conditional_t<Is_Container_v<Types2>, Types2, Wrap_t<Types2>>>>...>;
-		};
-
-		//Distribute n = 1
-		template <template <typename ...> typename Container1, typename ... Types1>
-		class Distribute<Container1<Types1...>>
-		{
-		public:
-			using Type = Wrap_t<Types1...>;
-		};
-
-		//Distribute n = 0
-		template <>
-		class Distribute<>
-		{
-		public:
-			using Type = Wrap_t<>;
-		};
-
-		template <typename ... Types>
-		using Distribute_t = typename Distribute<Types...>::Type;
 
 		template <typename, template <typename> typename>
 		class For_Each
@@ -215,14 +115,14 @@ namespace COMPANY_NAME
 		class For_Each<Container<Type1, Types...>, Operation>
 		{
 		public:
-			using Type = std::conditional_t<Is_Container_v<typename Operation<Type1>::Type>, Join_t<typename Operation<Type1>::Type, typename Operation<Types>::Type...>, Wrap_t<typename Operation<Type1>::Type, typename Operation<Types>::Type...>>;
+			using Type = std::conditional_t<Is_Container_v<typename Operation<Type1>::Type>, Join_t<typename Operation<Type1>::Type, typename Operation<Types>::Type...>, Slate::Meta::Wrap<typename Operation<Type1>::Type, typename Operation<Types>::Type...>>;
 		};
 
 		template <template <typename...> typename Container, template <typename> typename Operation>
 		class For_Each<Container<>, Operation>
 		{
 		public:
-			using Type = Wrap_t<>;
+			using Type = Slate::Meta::Wrap<>;
 		};
 
 		template <typename Types, template <typename> typename Meta_Functor>
@@ -245,15 +145,15 @@ namespace COMPANY_NAME
 		template <template <typename ...> typename Container1, typename Type1, typename ... Types1>
 		class Unique<Container1<Type1, Types1...>>
 		{
-			using Next = typename Unique<Wrap_t<Types1...>>::Type;
+			using Next = typename Unique<Slate::Meta::Wrap<Types1...>>::Type;
 			template <typename _Type>
 			class Is_Same
 			{
 			public:
-				using Type = std::conditional_t<!std::is_same_v<Type1, _Type>, Wrap_t<_Type>, Wrap_t<>>;
+				using Type = std::conditional_t<!std::is_same_v<Type1, _Type>, Slate::Meta::Wrap<_Type>, Slate::Meta::Wrap<>>;
 			};
 		public:
-			using Type = Join_t<Wrap_t<Type1>, For_Each_t<Next, Is_Same>>;
+			using Type = Join_t<Slate::Meta::Wrap<Type1>, For_Each_t<Next, Is_Same>>;
 		};
 
 		//Unique n = 1, sizeof(c1) = 1
@@ -261,22 +161,22 @@ namespace COMPANY_NAME
 		class Unique<Container1<Type1>>
 		{
 		public:
-			using Type = Wrap_t<Type1>;
+			using Type = Slate::Meta::Wrap<Type1>;
 		};
 
 		//Unique n = 0
 		template <>
-		class Unique<Wrap_t<>>
+		class Unique<Slate::Meta::Wrap<>>
 		{
 		public:
-			using Type = Wrap_t<>;
+			using Type = Slate::Meta::Wrap<>;
 		};
 
 		template <>
 		class Unique<>
 		{
 		public:
-			using Type = Wrap_t<>;
+			using Type = Slate::Meta::Wrap<>;
 		};
 
 		template <typename ... Types>
@@ -293,24 +193,29 @@ namespace COMPANY_NAME
 			Complexity:
 				O(1)
 		*/
-		template <typename ... Types, typename Type>
-		typename Imp::Meta::Cast<Type, Types...>::Cast_Type Cast(Type& t)
+		
+		template <typename Convert, typename Type>
+		Convert& Cast(Type& t)
 		{
-			return Imp::Meta::Cast<Type, Types...>::_Cast(t);
+			return static_cast<Convert&>(t);
+		}
+		
+		template <typename Convert, typename ... Steps, typename Type>
+		auto Cast(Type& t) -> std::enable_if_t<sizeof...(Steps) != 0, Convert&>
+		{
+			return static_cast<Convert&>(Cast<Steps...>(t));
 		}
 
-		/*
-			Args:
-				t: The object to be cast
-			Summary:
-				Casts the object, t, to Type, using Types... in reverse order as steps
-			Complexity:
-				O(1)
-		*/
-		template <typename ... Types, typename Type>
-		typename Imp::Meta::Cast<Type, Types...>::Cast_Type Const_Cast(const Type& t)
+		template <typename Convert, typename Type>
+		Convert const& Cast(Type const& t)
 		{
-			return Imp::Meta::Const_Cast<Type, Types...>::_Cast(t);
+			return static_cast<Convert const&>(t);
+		}
+
+		template <typename Convert, typename ... Steps, typename Type>
+		auto Cast(Type const& t) -> std::enable_if_t<sizeof...(Steps) != 0, Convert const&>
+		{
+			return static_cast<Convert const&>(Cast<Steps...>(t));
 		}
 
 		/*
@@ -318,7 +223,7 @@ namespace COMPANY_NAME
 				Convert from/to Standard Container to/from Non Standard Containers,
 				Standard referring to Imp::Meta::_Types
 		*/
-		template <typename Type, template <typename...> typename Container = Imp::Meta::_Types>
+		template <typename Type, template <typename...> typename Container = Slate::Meta::Wrap>
 		using Convert = typename Imp::Meta::Convert<Type, Container>::Type;
 
 		/*
@@ -327,13 +232,6 @@ namespace COMPANY_NAME
 		*/
 		template <typename Type>
 		constexpr bool Is_Container = Imp::Meta::Is_Container<Type>::value;
-
-		/*
-			Summary:
-				Puts all types in a compile time container
-		*/
-		template <typename ... Types>
-		using Wrap = typename Imp::Meta::Wrap<Types...>::Type;
 
 		/*
 			Summary:
@@ -352,18 +250,6 @@ namespace COMPANY_NAME
 		*/
 		template <typename ... Types>
 		using Join = typename Imp::Meta::Join<Types...>::Type;
-
-		/*
-			Constraits:
-				Types...: Is_Compile_Time_Container<Types...> is true
-			Summary:
-				Distributes from one set to another
-			Example:
-				Distribute<{A, B}, {C, D}> = {{A, C}, {A, D}, {B, C}, {B, D}}
-				Note that the degree of the container increases by one
-		*/
-		template <typename ... Types>
-		using Distribute = typename Imp::Meta::Distribute<Types...>::Type;
 
 		/*
 			Summary:

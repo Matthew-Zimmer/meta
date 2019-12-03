@@ -1,30 +1,16 @@
-CMake_Minimum_Required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.13)
 
-Project(Meta)
+project(meta)
 
-If(DEFINED TESTING)
-	If(${TESTING} STREQUAL true)
-		Add_Executable(Meta "Test/Main.cpp")
-		Target_Compile_Definitions(Meta PRIVATE TESTING)
-		Add_Subdirectory(Test)
-	Else()
-		Add_Library(Meta INTERFACE)
-	EndIf()
-	Unset(TESTING CACHE)
-ELSE()
-	Add_Library(Meta INTERFACE)
-EndIf()
+add_library(meta INTERFACE)
 
-Add_Subdirectory(Source)
-Add_Subdirectory(Include)
-Add_Subdirectory(Imp)
+add_subdirectory(src)
+add_subdirectory(include)
 
-Target_Compile_Features(Meta 
-    INTERFACE cxx_std_17)
+target_compile_features(meta INTERFACE cxx_std_17)
 
-Set(CMAKE_CXX_STANDARD "libc++")
 #Set(CMAKE_CXX_FLAGS "-Wall" "-Wextra")
 
-Install(TARGETS Meta EXPORT Meta DESTINATION lib/Meta)
-Install(EXPORT Meta DESTINATION lib/Meta)
-Install(FILES MetaConfig.cmake DESTINATION lib/Meta)
+install(TARGETS meta EXPORT meta DESTINATION lib/Meta)
+install(EXPORT meta DESTINATION lib/Meta)
+install(FILES meta-config.cmake DESTINATION lib/Meta)
