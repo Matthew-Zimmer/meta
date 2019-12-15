@@ -192,6 +192,15 @@ namespace Slate
 			using Args = Slate::Meta::Wrap<Args_...>;
 		};
 
+        template <typename Return_Type_, typename Object_Type_, typename ... Args_>
+		class Function_Types<Return_Type_(Object_Type_::*)(Args_...)>
+		{
+		public:
+			using Return_Type = Return_Type_;
+			using Object_Type = Object_Type_;
+			using Args = Slate::Meta::Wrap<Args_...>;
+		};
+
 		template <typename Return_Type_, typename Object_Type_, typename ... Args_>
 		class Function_Types<Return_Type_(Object_Type_::*)(Args_...) const>
 		{
@@ -202,11 +211,20 @@ namespace Slate
 		};
 
         template <typename Return_Type_, typename Object_Type_, typename ... Args_>
-		class Function_Types<Return_Type_(Object_Type_::*)(Args_...)>
+		class Function_Types<Return_Type_(Object_Type_::*)(Args_...) volatile>
 		{
 		public:
 			using Return_Type = Return_Type_;
-			using Object_Type = Object_Type_;
+			using Object_Type = volatile Object_Type_;
+			using Args = Slate::Meta::Wrap<Args_...>;
+		};
+
+        template <typename Return_Type_, typename Object_Type_, typename ... Args_>
+		class Function_Types<Return_Type_(Object_Type_::*)(Args_...) const volatile>
+		{
+		public:
+			using Return_Type = Return_Type_;
+			using Object_Type = const volatile Object_Type_;
 			using Args = Slate::Meta::Wrap<Args_...>;
 		};
 	}
