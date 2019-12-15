@@ -1,4 +1,3 @@
-#pragma once
 #include <type_traits>
 namespace Slate 
 {
@@ -181,6 +180,35 @@ namespace Slate
 
 		template <typename ... Types>
 		using Unique_t = typename Unique<Types...>::Type;
+
+		template <typename>
+		class Function_Types {};
+
+        template <typename Return_Type_, typename ... Args_>
+		class Function_Types<Return_Type_(*)(Args_...)>
+		{
+		public:
+			using Return_Type = Return_Type_;
+			using Args = Slate::Meta::Wrap<Args_...>;
+		};
+
+		template <typename Return_Type_, typename Object_Type_, typename ... Args_>
+		class Function_Types<Return_Type_(Object_Type_::*)(Args_...) const>
+		{
+		public:
+			using Return_Type = Return_Type_;
+			using Object_Type = const Object_Type_;
+			using Args = Slate::Meta::Wrap<Args_...>;
+		};
+
+        template <typename Return_Type_, typename Object_Type_, typename ... Args_>
+		class Function_Types<Return_Type_(Object_Type_::*)(Args_...)>
+		{
+		public:
+			using Return_Type = Return_Type_;
+			using Object_Type = Object_Type_;
+			using Args = Slate::Meta::Wrap<Args_...>;
+		};
 	}
 
 	namespace Meta 
@@ -278,5 +306,15 @@ namespace Slate
 		*/
 		template <typename ... Type>
 		using Unique = typename Imp::Meta::Unique<Type...>::Type;
+
+		template <typename Type>
+		using Return_Type = typename Imp::Meta::Function_Types<Type>::Return_Type;
+
+		template <typename Type>
+		using Object_Type = typename Imp::Meta::Function_Types<Type>::Object_Type;
+
+        //Note this loses const qualifier on non reference/pointer types
+		template <typename Type>
+		using Args = typename Imp::Meta::Function_Types<Type>::Args;
 	}
 }
