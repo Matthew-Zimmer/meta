@@ -1,3 +1,4 @@
+#pragma once
 #include <type_traits>
 namespace Slate 
 {
@@ -46,22 +47,22 @@ namespace Slate
 		template <typename Type>
 		constexpr bool Is_Container_v = Is_Container<Type>::value;
 
-		template <typename Type1>
-		class Unwrap
-		{
-		public:
-			using Type = Type1;
-		};
-
-		template <typename Type1, template <typename ...> typename Container>
-		class Unwrap<Container<Type1>>
-		{
-		public:
-			using Type = Type1;
-		};
+		template <typename Type_, std::size_t Index>
+        class Unwrap_At
+        {
+            template <std::size_t FIndex, std::size_t ... Indexs, typename F, typename ... Types_>
+            static auto Imp(std::index_sequence<FIndex, Indexs...>, Slate::Meta::Wrap<F, Types_...>)
+            {
+                return Imp(std::index_sequence<Indexs...>{}, Slate::Meta::Wrap<Types_...>{});
+            }
+            template <typename F, typename ... Types_>
+            static auto Imp(std::index_sequence<>, Slate::Meta::Wrap<F, Types_...>) -> F;
+        public:
+            using Type = decltype(Imp(std::make_index_sequence<Index>{}, std::declval<Type_>()));
+        };
 
 		template <typename Type>
-		using Unwrap_t = typename Unwrap<Type>::Type;
+		using Unwrap_t = typename Unwrap_At<Type, 0>::Type;
 
 		template <typename...>
 		class Join
@@ -285,7 +286,10 @@ namespace Slate
 				there is only one type in the container else it does nothing
 		*/
 		template <typename Type>
-		using Unwrap = typename Imp::Meta::Unwrap<Type>::Type;
+		using Unwrap = typename Imp::Meta::Unwrap_At<Type, 0>::Type;
+
+        template <typename Type, std::size_t Index>
+		using Unwrap_At = typename Imp::Meta::Unwrap_At<Type, Index>::Type;
 
 		/*
 			Constraits:
@@ -334,5 +338,12 @@ namespace Slate
         //Note this loses const qualifier on non reference/pointer types
 		template <typename Type>
 		using Args = typename Imp::Meta::Function_Types<Type>::Args;
+
+        template <typename Type_, std::size_t Index>
+        class Extract
+        {
+        public:
+            using Type = Wrap<Unwrap_At<Type_, Index>>;
+        };
 	}
 }
