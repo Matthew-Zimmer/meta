@@ -1,5 +1,5 @@
 #pragma once
-#include <type_traits>
+#include <utility>
 namespace Slate 
 {
 	namespace Meta
@@ -7,6 +7,16 @@ namespace Slate
 		template <typename ... Types>
 		class Wrap
 		{};
+
+		template <std::size_t value>
+		class Integer
+		{
+		public:
+			constexpr operator std::size_t() const
+			{
+				return value;
+			}
+		};
 	}
 
 	namespace Imp::Meta
@@ -50,10 +60,10 @@ namespace Slate
 		template <typename Type_, std::size_t Index>
         class Unwrap_At
         {
-            template <std::size_t FIndex, std::size_t ... Indexs, typename F, typename ... Types_>
-            static auto Imp(std::index_sequence<FIndex, Indexs...>, Slate::Meta::Wrap<F, Types_...>)
+            template <std::size_t FIndex, std::size_t ... Indexes, typename F, typename ... Types_>
+            static auto Imp(std::index_sequence<FIndex, Indexes...>, Slate::Meta::Wrap<F, Types_...>)
             {
-                return Imp(std::index_sequence<Indexs...>{}, Slate::Meta::Wrap<Types_...>{});
+                return Imp(std::index_sequence<Indexes...>{}, Slate::Meta::Wrap<Types_...>{});
             }
             template <typename F, typename ... Types_>
             static auto Imp(std::index_sequence<>, Slate::Meta::Wrap<F, Types_...>) -> F;
@@ -228,6 +238,33 @@ namespace Slate
 			using Object_Type = const volatile Object_Type_;
 			using Args = Slate::Meta::Wrap<Args_...>;
 		};
+
+		template <typename Type>
+        class Size
+        {};
+
+		template <typename ... Types>
+        class Size<Slate::Meta::Wrap<Types...>>
+        {
+		public:
+			static constexpr std::size_t value = sizeof...(Types);
+		};
+
+		template <typename Type>
+        constexpr std::size_t size_v = Size<Type>::value;
+
+		template <typename Type_>
+        class Tag
+        {};
+
+		template <typename ... Types>
+        class Tag<Slate::Meta::Wrap<Types...>>
+        {
+			template <std::size_t ... Indexes>
+            static auto Imp(std::index_sequence<Indexes...>) -> Slate::Meta::Wrap<Slate::Meta::Wrap<Types, Slate::Meta::Integer<Indexes>>...>;
+		public:
+			using Type = decltype(Imp(std::index_sequence_for<Types...>{}));
+		};
 	}
 
 	namespace Meta 
@@ -345,5 +382,14 @@ namespace Slate
         public:
             using Type = Wrap<Unwrap_At<Type_, Index>>;
         };
+
+		template <typename Type>
+        using Tag = typename Imp::Meta::Tag<Type>::Type;
+
+		template <typename Type>
+        constexpr std::size_t Size = Imp::Meta::Size<Type>::value;
+
+		template <typename Type>
+        using Unwrap_Back = Unwrap_At<Type, Size<Type> - 1>;
 	}
 }
