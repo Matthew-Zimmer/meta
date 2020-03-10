@@ -363,8 +363,8 @@ namespace Slate
 			Summary:
 				Returns the unique set of types of all all containers
 		*/
-		template <typename ... Type>
-		using Unique = typename Imp::Meta::Unique<Type...>::Type;
+		template <typename ... Types>
+		using Unique = typename Imp::Meta::Unique<Types...>::Type;
 
 		template <typename Type>
 		using Return_Type = typename Imp::Meta::Function_Types<Type>::Return_Type;

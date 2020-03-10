@@ -1,0 +1,1 @@
+target_sources(meta_test PUBLIC main.cpp)
