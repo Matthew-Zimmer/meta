@@ -285,9 +285,8 @@ namespace Slate
 		}
 		
 		template <typename Convert, typename ... Steps, typename Type>
-		auto& cast(Type& t)
+		auto cast(Type& t) -> std::enable_if_t<sizeof...(Steps) != 0, Convert&>
 		{
-			static_assert(sizeof...(Steps) != 0);
 			return static_cast<Convert&>(cast<Steps...>(t));
 		}
 
