@@ -293,7 +293,7 @@ namespace Slate
 		template <typename Convert, typename Type>
 		auto const& cast(Type const& t)
 		{
-			return static_cast<Convert&>(t);
+			return static_cast<Convert const&>(t);
 		}
 		
 		template <typename Convert, typename ... Steps, typename Type>
