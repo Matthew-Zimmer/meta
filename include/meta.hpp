@@ -290,6 +290,18 @@ namespace Slate
 			return static_cast<Convert&>(cast<Steps...>(t));
 		}
 
+		template <typename Convert, typename Type>
+		auto const& cast(Type const& t)
+		{
+			return static_cast<Convert&>(t);
+		}
+		
+		template <typename Convert, typename ... Steps, typename Type>
+		auto cast(Type const& t) -> std::enable_if_t<sizeof...(Steps) != 0, Convert const&>
+		{
+			return static_cast<Convert const&>(cast<Steps...>(t));
+		}
+
 		/*
 			Summary:
 				Convert from/to Standard Container to/from Non Standard Containers,
