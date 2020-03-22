@@ -74,6 +74,34 @@ namespace Slate
 		template <typename Type>
 		using Unwrap_t = typename Unwrap_At<Type, 0>::Type;
 
+		template <typename Type1, typename Type2>
+		class Append
+		{
+		public:
+			using Type = Slate::Meta::Wrap<Type1, Type2>;
+		};
+
+		template <typename T, typename ... Types>
+		class Append<T, Slate::Meta::Wrap<Types...>>
+		{
+		public:
+			using Type = Slate::Meta::Wrap<T, Types...>;
+		};
+
+		template <typename T, typename ... Types>
+		class Append<Slate::Meta::Wrap<Types...>, T>
+		{
+		public:
+			using Type = Slate::Meta::Wrap<Types..., T>;
+		};
+
+		template <typename ... Types1, typename ... Types2>
+		class Append<Slate::Meta::Wrap<Types1...>, Slate::Meta::Wrap<Types2...>>
+		{
+		public:
+			using Type = Slate::Meta::Wrap<Types1..., Types2...>;
+		};
+
 		template <typename...>
 		class Join
 		{};
@@ -84,22 +112,13 @@ namespace Slate
 		class Join<Type1, Types_Rest...>
 		{
 		public:
-			using Type = typename Join<Type1, typename Join<Types_Rest...>::Type>::Type;
-		};
-
-		//Joining Two Containers
-
-		template <template <typename ...> typename Container1, template <typename ...> typename Container2, typename ... Types1, typename ... Types2>
-		class Join<Container1<Types1...>, Container2<Types2...>>
-		{
-		public:
-			using Type = Slate::Meta::Wrap<Types1..., Types2...>;
+			using Type = typename Append<Type1, typename Join<Types_Rest...>::Type>::Type;
 		};
 
 		//Joining One Containers
 
-		template <template <typename ...> typename Container1, typename ... Types1>
-		class Join<Container1<Types1...>>
+		template <typename ... Types1>
+		class Join<Slate::Meta::Wrap<Types1...>>
 		{
 		public:
 			using Type = Slate::Meta::Wrap<Types1...>;
@@ -328,6 +347,9 @@ namespace Slate
         template <typename Type, std::size_t Index>
 		using Unwrap_At = typename Imp::Meta::Unwrap_At<Type, Index>::Type;
 
+		template <typename Type1, typename Type2>
+		using Append = typename Imp::Meta::Append<Type1, Type2>::Type;
+		
 		/*
 			Constraits:
 				Types...: Is_Compile_Time_Container<Types>... is true and 
@@ -363,8 +385,8 @@ namespace Slate
 			Summary:
 				Returns the unique set of types of all all containers
 		*/
-		template <typename ... Type>
-		using Unique = typename Imp::Meta::Unique<Type...>::Type;
+		template <typename ... Types>
+		using Unique = typename Imp::Meta::Unique<Types...>::Type;
 
 		template <typename Type>
 		using Return_Type = typename Imp::Meta::Function_Types<Type>::Return_Type;
@@ -391,5 +413,50 @@ namespace Slate
 
 		template <typename Type>
         using Unwrap_Back = Unwrap_At<Type, Size<Type> - 1>;
+
+		namespace Detail
+        {
+            template <typename>
+            class Unwrap_Tail_I
+            {};
+
+            template <typename First, typename ... Rest>
+            class Unwrap_Tail_I<Wrap<First, Rest...>>
+            {
+            public:
+                using Type = Wrap<Rest...>;
+            };
+        }
+
+        template <typename Type>
+        using Unwrap_Tail = typename Detail::Unwrap_Tail_I<Type>::Type;
+
+        namespace Detail
+        {
+            template <typename, typename>
+            class Split_I
+            {};
+
+            template <typename First, typename ... Rest, typename Delimiter>
+            class Split_I<Wrap<First, Rest...>, Delimiter>
+            {
+                using Next = typename Split_I<Wrap<Rest...>, Delimiter>::Type;
+            public:
+                using Type = std::conditional_t<
+                    std::is_same_v<First, Delimiter>, 
+                    Join<Wrap<Wrap<>>, Wrap<Unwrap<Next>>, Unwrap_Tail<Next>>, 
+                    Join<Wrap<Append<First, Unwrap<Next>>>, Unwrap_Tail<Next>>>;
+            };
+
+            template <typename First, typename Delimiter>
+            class Split_I<Wrap<First>, Delimiter>
+            {
+            public:
+                using Type = Use_If<!std::is_same_v<First, Delimiter>, Wrap<First>>;
+            };
+        }
+
+        template <typename Container, typename Delimiter>
+        using Split = typename Detail::Split_I<Container, Delimiter>::Type;
 	}
 }
