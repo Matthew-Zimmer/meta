@@ -458,5 +458,32 @@ namespace Slate
 
         template <typename Container, typename Delimiter>
         using Split = typename Detail::Split_I<Container, Delimiter>::Type;
+
+		namespace Detail
+		{
+			template <typename T, template <typename, typename> typename Function, typename Value>
+			class Left_Fold
+			{
+			public:
+				using Type = typename Function<T, Value>::Type;
+			};
+
+			template <typename T, typename ... Types, template <typename, typename> typename Function, typename Value>
+			class Left_Fold<Wrap<T, Types...>, Function, Value>
+			{
+			public:
+				using Type = typename Left_Fold<Wrap<Types...>, Function, typename Left_Fold<T, Function, Value>::Type>::Type;
+			};
+
+			template <template <typename, typename> typename Function, typename Value>
+			class Left_Fold<Wrap<>, Function, Value>
+			{
+			public:
+				using Type = Value;
+			};
+		}
+
+		template <typename Container, template <typename, typename> typename Function, typename Value = Wrap<>>
+		using Left_Fold = typename Detail::Left_Fold<Container, Function, Value>::Type;
 	}
 }
